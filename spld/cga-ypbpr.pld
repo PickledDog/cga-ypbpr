@@ -1,0 +1,260 @@
+Name     cga-ypbpr;
+PartNo   None;
+Date     24-Oct-21;
+Revision 01;
+Designer Wesley Isacks;
+Company  PD Parts;
+Assembly None;
+Location None;
+Device   g22v10;
+
+/* Inputs */
+Pin    1=Blnk;  /* Forced blanking, used to provide black level reference after Hsync */
+Pin    2=HS;    /* Hsync */
+Pin    3=VPol;  /* Vsync polarity. 0 = Positive polarity, 200 lines. 1 = Negative polarity, 350 lines */
+Pin    4=VS;    /* Vsync */
+Pin    5=B;     /* Blue */
+Pin    6=G;     /* Green */
+Pin    7=R;     /* Red */
+Pin    8=M;     /* MDA/Herc mono "video" signal, Blue Intensity in EGA mode */
+Pin    9=I;     /* Intensity, Green Intensity in EGA mode */
+Pin   10=RI;    /* Red Intensity (EGA only, otherwise Gnd) */
+Pin   11=Mode;  /* Select type of 350 line mode. 0 for MDA/Hercules, 1 for EGA */
+
+/* Outputs */
+Pin   23=RA;    /* Component Pr, MSB... */
+Pin   22=RB;
+Pin   21=RC;    /* ... LSB. 3 bits total */
+Pin   20=YA;    /* Component Y, MSB... */
+Pin   19=YB;
+Pin   18=YC;
+Pin   17=YD;    /* ... LSB. 4 bits total */
+Pin   16=BA;    /* Component Pb, MSB... */
+Pin   15=BB;
+Pin   14=BC;    /* ... LSB. 3 bits total */
+
+/* Declarations */
+Field IRGBSyn = [Blnk,VPol,HS,VS,I,R,G,B];        /* IRGB */
+Field IRGB    = [Blnk,VPol,I,R,G,B];
+Field MonoSyn = [Mode,VPol,HS,!VS,I,M];           /* Mono video + intensity */
+Field Mono    = [Mode,VPol];
+Field EGASyn  = [Mode,VPol,HS,!VS,R,RI,G,I,B,M];  /* RrGgBb */
+Field EGA     = [Mode,VPol,R,RI,G,I,B,M];
+Field Y       = [YA,YB,YC,YD];
+Field Pb      = [BA,BB,BC];
+Field Pr      = [RA,RB,RC];
+
+/* Truth tables */
+
+/* Component Y output */
+/* 200 line modes. Positive Vsync, Mode switch doesn't matter */
+Table IRGBSyn => Y {
+/* Blnk,VPol,HS,VS,I,R,G,B */
+'b'00000000=>4;  /* Black */
+'b'00000001=>5;  /* Blue */
+'b'00000010=>9;  /* Green */
+'b'00000011=>A;  /* Cyan */
+'b'00000100=>6;  /* Red */
+'b'00000101=>7;  /* Magenta */
+'b'00000110=>9;  /* Brown */
+'b'00000111=>C;  /* White */
+'b'00001000=>7;  /* Grey */
+'b'00001001=>8;  /* BrBlue */
+'b'00001010=>C;  /* BrGreen */
+'b'00001011=>D;  /* BrCyan */
+'b'00001100=>9;  /* BrRed */
+'b'00001101=>A;  /* BrMagenta */
+'b'00001110=>E;  /* Yellow */
+'b'00001111=>F;  /* BrWhite */
+'b'0001XXXX=>0;  /* Vsync only */
+'b'0010XXXX=>0;  /* Hsync only */
+'b'0011XXXX=>4;  /* Invert HSync pulses during Vblank */
+'b'1000XXXX=>4;  /* Set blank level during blanking */
+'b'1001XXXX=>0;  /* Sync as before during blanking */
+'b'1010XXXX=>0;
+'b'1011XXXX=>4;
+}
+
+/* 350 line mono. Negative Vsync, Mode is 0 */
+Table MonoSyn => Y {
+/* Mode,VPol,HS,!VS,I,M */
+'b'010000=>4;  /* Black */
+'b'010001=>C;  /* White */
+'b'010010=>5;  /* Apparently some mono screens show faint grey here */
+'b'010011=>F;  /* BrWhite */
+'b'0101XX=>0;  /* Vsync only */
+'b'0110XX=>0;  /* Hsync only */
+'b'0111XX=>4;  /* Invert HSync pulses during Vblank */
+}
+
+/* 350 line EGA. Negative Vsync, Mode is 1 */
+Table EGASyn => Y {
+/* Mode,VPol,HS,!VS,R,RI,G,I,B,M */
+'b'110000000X=>4;  /* Black */
+'b'110000001X=>5;  /* Blue */
+'b'110000010X=>6;
+'b'110000011X=>7;
+'b'110000100X=>9;  /* Green */
+'b'110000101X=>A;  /* Cyan */
+'b'110000110X=>B;
+'b'110000111X=>C;
+'b'110001000X=>5;
+'b'110001001X=>6;
+'b'110001010X=>7;  /* Grey */
+'b'110001011X=>8;  /* BrBlue */
+'b'110001100X=>A;
+'b'110001101X=>B;
+'b'110001110X=>C;  /* BrGreen */
+'b'110001111X=>D;  /* BrCyan */
+'b'110010000X=>6;  /* Red */
+'b'110010001X=>7;  /* Magenta */
+'b'110010010X=>8;  /* Brown */
+'b'110010011X=>9;
+'b'110010100X=>B;  /* DkYellow */
+'b'110010101X=>C;  /* White */
+'b'110010110X=>D;
+'b'110010111X=>E;
+'b'110011000X=>8;
+'b'110011001X=>9;
+'b'110011010X=>A;  /* BrRed */
+'b'110011011X=>B;  /* BrMagenta */
+'b'110011100X=>C;
+'b'110011101X=>D;
+'b'110011110X=>E;  /* Yellow */
+'b'110011111X=>F;  /* BrWhite */
+'b'1101XXXXXX=>0;  /* Vsync only */
+'b'1110XXXXXX=>0;  /* Hsync only */
+'b'1111XXXXXX=>4;  /* Invert HSync pulses during Vblank */
+}
+
+/* Component Pb output */
+/* 200 line modes */
+Table IRGB => Pb {
+/* Blnk,VPol,I,R,G,B */
+'b'000000=>3;  /* Black */
+'b'000001=>6;  /* Blue */
+'b'000010=>1;  /* Green */
+'b'000011=>4;  /* Cyan */
+'b'000100=>2;  /* Red */
+'b'000101=>5;  /* Magenta */
+'b'000110=>1;  /* Brown */
+'b'000111=>3;  /* White */
+'b'001000=>3;  /* Grey */
+'b'001001=>6;  /* BrBlue */
+'b'001010=>1;  /* BrGreen */
+'b'001011=>4;  /* BrCyan */
+'b'001100=>2;  /* BrRed */
+'b'001101=>5;  /* BrMagenta */
+'b'001110=>0;  /* Yellow */
+'b'001111=>3;  /* BrWhite */
+'b'10XXXX=>3;  /* Blanking */
+}
+
+/* 350 line mono */
+Table Mono => Pb {
+/* Mode,VPol */
+'b'01=>3; /* Mono! */
+}
+
+/* 350 line EGA */
+Table EGA => Pb {
+/* Mode,VPol,R,RI,G,I,B,M */
+'b'110X0000=>3;  /* Black */
+'b'111X0000=>2;  /* Red */
+'b'110X0001=>4;
+'b'111X0001=>4;
+'b'110X0010=>6;  /* Blue */
+'b'111X0010=>5;  /* Magenta */
+'b'110X0011=>6;
+'b'111X0011=>6;
+'b'110X0100=>1;
+'b'111X0100=>1;  /* Brown */
+'b'110X0101=>3;  /* Grey */
+'b'111X0101=>2;  /* BrRed */
+'b'110X0110=>6;
+'b'111X0110=>5;
+'b'110X0111=>6;  /* BrBlue */
+'b'111X0111=>5;  /* BrMagenta */
+'b'110X1000=>1;  /* Green */
+'b'111X1000=>0;  /* DkYellow */
+'b'110X1001=>3;
+'b'111X1001=>2;
+'b'110X1010=>4;  /* Cyan */
+'b'111X1010=>3;  /* White */
+'b'110X1011=>4;
+'b'111X1011=>3;
+'b'110X1100=>1;
+'b'111X1100=>0;
+'b'110X1101=>1;  /* BrGreen */
+'b'111X1101=>0;  /* Yellow */
+'b'110X1110=>4;
+'b'111X1110=>2;
+'b'110X1111=>4;  /* BrCyan */
+'b'111X1111=>3;  /* BrWhite */
+}
+
+/* Component Pr output */
+/* 200 line modes */
+Table IRGB => Pr {
+/* Blnk,VPol,I,R,G,B */
+'b'000000=>3;  /* Black */
+'b'000001=>2;  /* Blue */
+'b'000010=>1;  /* Green */
+'b'000011=>0;  /* Cyan */
+'b'000100=>6;  /* Red */
+'b'000101=>5;  /* Magenta */
+'b'000110=>5;  /* Brown */
+'b'000111=>3;  /* White */
+'b'001000=>3;  /* Grey */
+'b'001001=>2;  /* BrBlue */
+'b'001010=>1;  /* BrGreen */
+'b'001011=>0;  /* BrCyan */
+'b'001100=>6;  /* BrRed */
+'b'001101=>5;  /* BrMagenta */
+'b'001110=>4;  /* Yellow */
+'b'001111=>3;  /* BrWhite */
+'b'10XXXX=>3;  /* Blanking */
+}
+
+/* 350 line mono */
+Table Mono => Pr {
+/* Mode,VPol */
+'b'01=>3;  /* Still mono */
+}
+
+/* 350 line EGA */
+Table EGA => Pr {
+/* Mode,VPol,R,RI,G,I,B,M */
+'b'1100000X=>3;  /* Black */
+'b'1100001X=>2;  /* Blue */
+'b'1100010X=>2;
+'b'1100011X=>2;
+'b'1100100X=>1;  /* Green */
+'b'1100101X=>0;  /* Cyan */
+'b'1100110X=>0;
+'b'1100111X=>0;
+'b'1101000X=>4;
+'b'1101001X=>3;
+'b'1101010X=>3;  /* Grey */
+'b'1101011X=>2;  /* BrBlue */
+'b'1101100X=>1;
+'b'1101101X=>1;
+'b'1101110X=>1;  /* BrGreen */
+'b'1101111X=>0;  /* BrCyan */
+'b'1110000X=>6;  /* Red */
+'b'1110001X=>5;  /* Magenta */
+'b'1110010X=>5;  /* Brown */
+'b'1110011X=>4;
+'b'1110100X=>4;  /* DkYellow */
+'b'1110101X=>3;  /* White */
+'b'1110110X=>4;
+'b'1110111X=>3;
+'b'1111000X=>6;
+'b'1111001X=>6;
+'b'1111010X=>6;  /* BrRed */
+'b'1111011X=>5;  /* BrMagenta */
+'b'1111100X=>5;
+'b'1111101X=>4;
+'b'1111110X=>4;  /* Yellow */
+'b'1111111X=>3;  /* BrWhite */
+}
